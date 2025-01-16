@@ -1,131 +1,156 @@
 
 #include "reader.h"
-
-#include <cassert>
+#include "Eigen/src/Core/Matrix.h"
 #include <iostream>
-#include <fcntl.h>
-#include <mlx/dtype.h>
-#include <unistd.h>
-#include <mlx/ops.h>
-#include <sys/fcntl.h>
 #include <errno.h>
+#include <sys/fcntl.h>
+#include <unistd.h>
 
-int flip_bytes(unsigned char* buf, int size) {
+uint flip_bytes(uchar* buf, size_t size) {
+    int flipped = 0;
 
-    int res = 0;
+    if (size < 1 || size > 4) {
+        std::cout << "Can only flip between 1 and 4 bytes." << std::endl;
+        exit(1);
+    }
 
     for (int i=0; i!=size; i++) {
-        res |= buf[size-(i+1)] << (8*i);
+        flipped |= buf[size - (i+1)] << (8 * i);
     }
+
+    return flipped;
+}
+
+std::vector<Eigen::VectorXd> read_labels(const char *path) {
+
+    int fd;
+    std::vector<Eigen::VectorXd> res;
+
+    if (fd=open(path, O_RDONLY); fd<0) {
+        std::cerr << "Unable to open file: " << strerror(errno) << std::endl;
+        exit(1);
+    }
+
+    int r_bytes;
+    uchar buf[8];
+
+    std::memset(buf, 0, 8);
+
+    if (r_bytes=read(fd, buf, 4); r_bytes<4) {
+        std::cerr << "Could not read magic number." << std::endl;
+        exit(1);
+    }
+
+    uint magic_number = flip_bytes(buf, 4);
+    if (magic_number != 2049) {
+        std::cerr << "Magic Number != 2049" << std::endl;
+        exit(1);
+    }
+
+    std::memset(buf, 0, 8);
+
+    if (r_bytes=read(fd, buf, 4); r_bytes<4) {
+        std::cerr << "Could not read number of items." << std::endl;
+        exit(1);
+    }
+
+    uint n_items = flip_bytes(buf, 4);
+
+    std::memset(buf, 0, 8);
+    int c=1;
+
+    while (r_bytes=read(fd, buf, 1), r_bytes>0) {
+        Eigen::VectorXd v(10);
+        v[int(buf[0])] = 1.0;
+        res.push_back(v);
+    }
+
+    close(fd);
 
     return res;
 }
 
-std::vector<mx::array> read_labels(const char* path) {
 
-    int fd, res;
+std::vector<Eigen::VectorXd> read_data(const char* path) {
+
+    int fd;
+    std::vector<Eigen::VectorXd> res;
+
     if (fd=open(path, O_RDONLY); fd<0) {
-        std::cerr << "Could not open file: " << strerror(errno) << std::endl;
-        close(fd);
+        std::cerr << "Unable to open file: " << strerror(errno) << std::endl;
         exit(1);
     }
 
-    unsigned char buf[1024];
-    std::memset(buf, 0, 1024);
+    int r_bytes;
+    uchar buf[1024];
 
-    if (res=read(fd, buf, 4); res<0) {
-        std::cerr << "Could not read magic number from file: " << strerror(errno) << std::endl;
-        close(fd);
+    if (r_bytes=read(fd, buf, 4); r_bytes<4) {
+        std::cerr << "Could not read magic number." << std::endl;
         exit(1);
     }
 
-    int magic_number, n_items;
-
-    magic_number = flip_bytes(buf, 4);
-    assert(magic_number == 2049);
-
-    std::memset(buf, 0, 1024);
-    if (res=read(fd, buf, 4); res<0) {
-        std::cerr << "Could not read number of items from file: " << strerror(errno) << std::endl;
-        close(fd);
+    uint magic_number = flip_bytes(buf, 4);
+    if (magic_number != 2051) {
+        std::cerr << "Magic Number != 2051" << std::endl;
         exit(1);
     }
 
-    n_items = flip_bytes(buf, 4);
-    assert(n_items == 60000);
+    uint n_images, n_row, n_col;
 
-    std::vector<mx::array> labels{};
-
+    // Number of Images
     std::memset(buf, 0, 1024);
-    while (read(fd, buf, 1000) > 0) {
-
-        for (int i=0; i!=1000; i++) {
-            float data[10];
-            std::memset(data, 0, 10*sizeof(float));
-            data[int(buf[i])] = 1.0f;
-            mx::array m = mx::array(data, {10,1}, mx::float32);
-            labels.push_back(m);
-        }
-
-        std::memset(buf, 0, 1024);
-    }
-
-    return labels;
-}
-
-
-std::vector<mx::array> read_images(const char* path) {
-
-    int fd, res;
-    if (fd=open(path, O_RDONLY); fd<0) {
-        std::cerr << "Could not open file: " << strerror(errno) << std::endl;
-        close(fd);
+    if (r_bytes=read(fd, buf, 4); r_bytes<4) {
+        std::cerr << "Could not read number of images." << std::endl;
         exit(1);
     }
 
-    unsigned char buf[1024];
-    std::memset(buf, 0, 1024);
+    n_images = flip_bytes(buf, 4);;
 
-    int magic_number, n_items, n_rows, n_cols;
-
-
-    std::memset(buf, 0, 1024);
-    if (res=read(fd, buf, 16); res<0) {
-        std::cerr << "Could not read numbers from file: " << strerror(errno) << std::endl;
-        close(fd);
+    if (n_images != 60000) {
+        std::cerr << "Number of Images != 60000" << std::endl;
         exit(1);
     }
 
-    magic_number = flip_bytes(buf, 4);
-    assert(magic_number == 2051);
-
-    n_items = flip_bytes(buf+4, 4);
-    assert(n_items == 60000);
-
-    n_rows = flip_bytes(buf+8, 4);
-    assert(n_rows == 28);
-
-    n_cols = flip_bytes(buf+12, 4);
-    assert(n_cols == 28);
-
-    std::vector<mx::array> images{};
-
+    // Number of Rows
     std::memset(buf, 0, 1024);
+    if (r_bytes=read(fd, buf, 4); r_bytes<4) {
+        std::cerr << "Could not read number of rows." << std::endl;
+        exit(1);
+    }
 
-    int r_pixels=0, n_pixels=n_rows*n_cols;
-    while (r_pixels=read(fd, buf, n_pixels), r_pixels==n_pixels) {
-        float data[n_pixels];
-        std::memset(data, 0, n_pixels*sizeof(float));
+    n_row = flip_bytes(buf, 4);;
+
+    if (n_row != 28) {
+        std::cerr << "Number of Rows != 28" << std::endl;
+        exit(1);
+    }
+
+    // Number of Cols
+    std::memset(buf, 0, 1024);
+    if (r_bytes=read(fd, buf, 4); r_bytes<4) {
+        std::cerr << "Could not read number of cols." << std::endl;
+        exit(1);
+    }
+
+    n_col = flip_bytes(buf, 4);;
+
+    if (n_col != 28) {
+        std::cerr << "Number of Rows != 28" << std::endl;
+        exit(1);
+    }
+
+    int n_pixels = n_row * n_col;
+    while(r_bytes=read(fd, buf, n_pixels), r_bytes==n_pixels) {
+        Eigen::VectorXd img(n_pixels);
         for (int i=0; i!=n_pixels; i++) {
-            data[i] = float(buf[i]) / 255.0f;
+            double v = double(buf[i]) / 255.0f;
+            img[i] = v;
         }
-        
-        mx::array m = mx::array(data, {n_rows*n_cols, 1}, mx::float32);
-        images.push_back(m);
-
+        res.push_back(img);
         std::memset(buf, 0, 1024);
     }
+
     close(fd);
 
-    return images;
+    return res;
 }

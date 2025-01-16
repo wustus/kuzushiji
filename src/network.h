@@ -2,32 +2,34 @@
 #ifndef network_h
 #define network_h
 
-#include <mlx/mlx.h>
 #include <vector>
-
-namespace mx = mlx::core;
+#include <Eigen/Dense>
 
 class Network {
 private:
-    std::vector<int> sizes;
     int num_layers;
-    std::vector<mx::array> weights;
-    std::vector<mx::array> biases;
+    std::vector<int> sizes;
+    std::vector<Eigen::VectorXd> biases;
+    std::vector<Eigen::MatrixXd> weights;
 public:
     Network(std::vector<int> sizes);
-    mx::array sigmoid_prime(mx::array a);
-    mx::array feed_forward(mx::array a);
-    int max_index(mx::array* a);
-    int evaluate(std::vector<std::tuple<mx::array, mx::array>>* data);
-    std::tuple<std::vector<mx::array>, std::vector<mx::array>> backprop(mx::array x, mx::array y);
-    void update_batch(std::vector<std::tuple<mx::array, mx::array>> batch, double eta);
+    double sigmoid(double v);
+    Eigen::VectorXd sigmoidv(Eigen::VectorXd v);
+    Eigen::MatrixXd sigmoidm(Eigen::MatrixXd m);
+    Eigen::VectorXd sigmoid_prime(Eigen::VectorXd v);
+    Eigen::VectorXd feed_forward(Eigen::VectorXd a);
+
+    std::tuple<std::vector<Eigen::VectorXd>, std::vector<Eigen::MatrixXd>> backprop(
+            Eigen::VectorXd x, 
+            Eigen::VectorXd y);
+    void update_mini_batch(std::vector<std::tuple<Eigen::VectorXd, Eigen::VectorXd>> mini_batch, double eta);
+    int evaluate(std::vector<std::tuple<Eigen::VectorXd, Eigen::VectorXd>> test_data);
     void stochastic_gradient_descent(
-        std::vector<std::tuple<mx::array, mx::array>> data,
-        int epochs,
-        int batch_size,
-        double eta,
-        std::vector<std::tuple<mx::array, mx::array>>* test_data
-    );
+            std::vector<std::tuple<Eigen::VectorXd, Eigen::VectorXd>> data,
+            size_t epochs,
+            size_t mini_batch_size,
+            double eta,
+            std::vector<std::tuple<Eigen::VectorXd, Eigen::VectorXd>>* test_data);
 };
 
 #endif
