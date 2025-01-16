@@ -1,0 +1,12 @@
+bin/kuzushiji > /dev/null  1211.70s user 673.44s system 182% cpu 17:11.98 total
+bin/kuzushiji > /dev/null  1232.50s user 721.51s system 176% cpu 18:24.24 total
+bin/kuzushiji > /dev/null  1225.58s user 677.36s system 181% cpu 17:27.41 total
+bin/kuzushiji > /dev/null  1228.19s user 684.27s system 173% cpu 18:20.26 total
+bin/kuzushiji > /dev/null  1226.82s user 690.48s system 179% cpu 17:45.66 total
+bin/kuzushiji > /dev/null  1243.10s user 715.98s system 181% cpu 17:59.84 total
+bin/kuzushiji > /dev/null  1236.20s user 699.41s system 181% cpu 17:47.37 total
+bin/kuzushiji > /dev/null  1245.27s user 715.01s system 181% cpu 17:59.94 total
+bin/kuzushiji > /dev/null  1229.20s user 688.87s system 180% cpu 17:41.37 total
+bin/kuzushiji > /dev/null  1218.67s user 674.69s system 177% cpu 17:44.89 total
+Average Time: 1070.3s
+Time / Epoch: 35.67s

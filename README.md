@@ -19,3 +19,19 @@ make
 ```bash
 bin/kuzushiji
 ```
+
+## Optimization
+
+`measure.sh` is executed which runs the binary 10 times and records the passed seconds for each execution.
+
+| Release | Average Time (s) | Time / Epoch (s) |
+|---------|------------------|------------------|
+| `0.0.1` |     `1070.3`     |      `35.67`     |
+
+
+## Changes
+
+### `0.0.1` inital implementation
+ - default stream `mx::Device::cpu`
+ - using two `mx::Device::gpu` streams arbitrarily
+ - `eval` called after 100 batches and in `evaluate` on every `mx::array`
