@@ -13,8 +13,6 @@ private:
     int num_layers;
     std::vector<mx::array> weights;
     std::vector<mx::array> biases;
-    mx::Stream s2;
-    mx::Stream s3;
 public:
     Network(std::vector<int> sizes);
     mx::array sigmoid_prime(mx::array a);

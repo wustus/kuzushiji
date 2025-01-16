@@ -27,9 +27,24 @@ bin/kuzushiji
 | Release | Average Time (s) | Time / Epoch (s) |
 |---------|------------------|------------------|
 | `0.0.1` |     `1070.3`     |      `35.67`     |
+| `0.0.2` |     `767.3`      |      `25.57`     |
 
 
 ## Changes
+
+### `0.0.2` [suggestions by @angeloskath](https://github.com/ml-explore/mlx/issues/1767#issuecomment-2594566745)
+ - default stream gpu
+ - drop adding arbitrary streams to operations 
+ - evaluate list of weights and biases
+ - one eval call after epoch
+ - one eval call after calculating all outputs
+ 
+#### Notes
+
+Although there was a significant speedup (~40%), it was not as much as I had hoped for. Letting basically the same code from my initial implementation run using `Eigen::MatrixXd` as a drop-in replacement for `mx::array`, the code finished in ~60 seconds: 2 seconds per epoch (running the code once). I will publish the Eigen implementation in a branch: `eigen`.
+I had hoped to use `mlx` as a BLAS library with GPU support for Macs with silicon chips: something that seems to be hard to come by in C++ (or maybe I didn't look hard enough). I do think though that this is not what `mlx` is trying to be. *This may be obvious in retrospect*. I'm quite sure using the framework the way it's intended to be used would yield a significant speedup over my naive implementation of a neural network with Eigen.
+
+I'd like to thank @angeloskath again for taking the time to look over my code and making suggestions.
 
 ### `0.0.1` inital implementation
  - default stream `mx::Device::cpu`
